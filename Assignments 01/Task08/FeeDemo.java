@@ -1,0 +1,130 @@
+
+
+import java.time.LocalTime;
+import java.time.Duration;
+
+interface Chargeable {
+    double chargingFee(int kWh);
+}
+
+abstract class Vehicle {
+    private final String regNo;
+
+    protected Vehicle(String regNo) {
+        this.regNo = regNo;
+    }
+
+    public String getRegNo() {
+        return regNo;
+    }
+
+    protected abstract double ratePerHour();
+
+    // Overloaded method 1: Calculate fee using minutes
+    public double calculateFee(int minutes) {
+        int hours = (minutes + 59) / 60;
+        return hours * ratePerHour();
+    }
+
+    // Overloaded method 2: Calculate fee using entry and exit times
+    public double calculateFee(LocalTime in, LocalTime out) {
+        long minutes = Duration.between(in, out).toMinutes();
+
+        if (minutes < 0) {
+            minutes += 24 * 60;
+        }
+
+        return calculateFee((int) minutes);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Vehicle
+                && regNo.equals(((Vehicle) o).regNo);
+    }
+
+    @Override
+    public int hashCode() {
+        return regNo.hashCode();
+    }
+}
+
+class TwoWheeler extends Vehicle {
+
+    TwoWheeler(String regNo) {
+        super(regNo);
+    }
+
+    @Override
+    protected double ratePerHour() {
+        return 10;
+    }
+}
+
+class Car extends Vehicle {
+
+    Car(String regNo) {
+        super(regNo);
+    }
+
+    @Override
+    protected double ratePerHour() {
+        return 30;
+    }
+}
+
+class ElectricCar extends Car implements Chargeable {
+
+    ElectricCar(String regNo) {
+        super(regNo);
+    }
+
+    @Override
+    public double chargingFee(int kWh) {
+        return kWh * 12;
+    }
+}
+
+public class FeeDemo {
+
+    public static void main(String[] args) {
+
+        Vehicle[] parked = {
+            new TwoWheeler("TN01A1"),
+            new Car("TN02B2"),
+            new ElectricCar("TN03C3")
+        };
+
+        for (Vehicle v : parked) {
+
+            double fee = v.calculateFee(130);
+
+            // Runtime checking for charging capability
+            if (v instanceof Chargeable c) {
+                fee += c.chargingFee(10);
+            }
+
+            System.out.println(
+                v.getClass().getSimpleName() + " "
+                + v.getRegNo() + " -> Rs " + fee
+            );
+        }
+
+        System.out.println(
+            new Car("TN02B2").equals(
+                new ElectricCar("TN02B2")
+            )
+        );
+
+        // Demonstrating overloaded method
+        Vehicle car = new Car("TN04D4");
+
+        System.out.println(
+            "Time-based fee: Rs " +
+            car.calculateFee(
+                LocalTime.of(9, 0),
+                LocalTime.of(11, 10)
+            )
+        );
+    }
+}
